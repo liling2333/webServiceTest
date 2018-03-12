@@ -1,0 +1,57 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jaxrs="http://cxf.apache.org/jaxrs" xmlns:cxf="http://cxf.apache.org/core" 
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd 
+	http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+	http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd 
+	http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd">
+
+	<!-- cxf3以后，只需要引入这个配置文件即可，其他两个废弃掉了 -->
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	
+	<!-- 发布soap webservice -->
+	<jaxws:server id="userService"
+		serviceClass="com.web.outputService.impl.UserServiceImpl" address="/getPersonById">
+		<!-- 对当前 endpoint 起作用
+		<jaxws:features> 
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</jaxws:features> -->
+		<jaxws:inInterceptors>
+			<!-- WS-Security拦截器 -->
+			<bean class="org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor">
+                <constructor-arg>
+                    <map>
+                        <entry key="action" value="UsernameToken"/>
+                    	<!-- 密码类型，PasswordText表示明文,密文是PasswordDigest -->    
+                        <entry key="passwordType" value="PasswordDigest"/>
+                        <entry key="passwordCallbackRef">
+                            <ref bean="myPasswordCallback"/> <!-- 回调函数引用 -->
+                        </entry>
+                    </map>
+                </constructor-arg>
+            </bean>
+		</jaxws:inInterceptors>
+	</jaxws:server>
+
+	<!-- 发布restful webservice -->
+	<jaxrs:server id="restUserService" 
+		serviceClass="com.web.outputService.impl.RestUserServiceImpl" address="/myservice">
+		<!-- 提供json转换 -->
+		<jaxrs:providers>
+			<bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"></bean>
+		</jaxrs:providers>
+	</jaxrs:server>
+	
+	<!-- 对所有的 endpoint 起作用 -->
+	<cxf:bus>
+		<cxf:features>
+			<bean class="org.apache.cxf.feature.LoggingFeature"></bean>
+		</cxf:features>
+		<!-- <cxf:inInterceptors>
+			<bean class="com.web.interceptor.AuthIntercepter"></bean>
+		</cxf:inInterceptors> -->
+	</cxf:bus>
+	<bean class="com.web.interceptor.ServerPasswordCallback" id="myPasswordCallback" />
+</beans>    
